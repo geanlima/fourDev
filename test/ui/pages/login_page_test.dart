@@ -14,18 +14,24 @@ void main() {
   LoginPresenter presenter;
   StreamController<String> emailErrorController;
   StreamController<String> passwordErrorController;
+  StreamController<String> mainErrorController;
   StreamController<bool> isFormValidController;
+  StreamController<bool> isLoadingController; 
   
   Future<void> loadPage(WidgetTester tester) async {
 
     presenter = LoginPresenterSpy();    
     emailErrorController = StreamController<String>();
+    mainErrorController = StreamController<String>();
     passwordErrorController = StreamController<String>();
     isFormValidController = StreamController<bool>();
-    
+    isLoadingController = StreamController<bool>();
+
     when(presenter.emailErrorStream).thenAnswer((_) => emailErrorController.stream);
     when(presenter.passwordErrorStream).thenAnswer((_) => passwordErrorController.stream);
+    when(presenter.mainErrorStream).thenAnswer((_) => mainErrorController.stream);
     when(presenter.isFormValidStream).thenAnswer((_) => isFormValidController.stream);
+    when(presenter.isLoadingStream).thenAnswer((_) => isLoadingController.stream);
 
     final loginPage = MaterialApp(home: LoginPage(presenter));    
     await tester.pumpWidget(loginPage);
@@ -35,7 +41,9 @@ void main() {
   tearDown((){
     emailErrorController.close();
     passwordErrorController.close();
+    mainErrorController.close();
     isFormValidController.close();
+    isLoadingController.close();
   });
 
   testWidgets(
@@ -65,6 +73,7 @@ void main() {
       // ignore: deprecated_member_use
       final button = tester.widget<RaisedButton>(find.byType(RaisedButton));
       expect(button.onPressed, null);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
     },
   );
 
@@ -189,12 +198,81 @@ void main() {
       await loadPage(tester);
 
       isFormValidController.add(false);
-
       await tester.pump();
 
       // ignore: deprecated_member_use
       final button = tester.widget<RaisedButton>(find.byType(RaisedButton));
       expect(button.onPressed, null);
+    },
+  );
+
+  testWidgets(
+    'Should call authentication on form submit',
+    (WidgetTester tester) async {
+      await loadPage(tester);
+
+      isFormValidController.add(true);
+      await tester.pump();
+      // ignore: deprecated_member_use
+      await tester.tap(find.byType(RaisedButton));
+      await tester.pump();
+
+      verify(presenter.auth()).called(1);
+      
+    },
+  );
+
+  testWidgets(
+    'Should present loading',
+    (WidgetTester tester) async {
+      await loadPage(tester);
+
+      isLoadingController.add(true);
+      await tester.pump();   
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      
+    },
+  );
+
+  testWidgets(
+    'Should hide loading',
+    (WidgetTester tester) async {
+      await loadPage(tester);
+
+      isLoadingController.add(true);
+      await tester.pump();      
+      isLoadingController.add(false);
+      await tester.pump();
+   
+
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      
+    },
+  );
+
+  testWidgets(
+    'Should present error message if authantication fails',
+    (WidgetTester tester) async {
+      await loadPage(tester);
+
+      mainErrorController.add('main error');
+      await tester.pump();   
+
+      expect(find.text('main error'), findsOneWidget);
+      
+    },
+  );
+
+  testWidgets(
+    'Should close stream on dispose',
+    (WidgetTester tester) async {
+      await loadPage(tester);
+
+      addTearDown((){
+        verify(presenter.dispose()).called(1);
+      });
+      
     },
   );
 
