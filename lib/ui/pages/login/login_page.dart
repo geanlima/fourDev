@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../components/components.dart';
+import 'components/components.dart';
 import 'login_presenter.dart';
 
 class LoginPage extends StatefulWidget {
@@ -28,47 +30,16 @@ class _LoginPageState extends State<LoginPage> {
           widget.presenter.isLoadingStream.listen(
             (isLoading) {
               if (isLoading) {
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (_) => new SimpleDialog(
-                    children: [
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(),
-                          SizedBox(
-                            height: 10,
-                          ),
-                          Text(
-                            "Aguarde...",
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                );
+                showLoading(context);
               } else {
-                if (Navigator.canPop(context)) {
-                  Navigator.of(context).pop();
-                }
+                hideLoading(context);
               }
             },
           );
 
           widget.presenter.mainErrorStream.listen((error) {
             if (error != null) {
-              // ignore: deprecated_member_use
-              Scaffold.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: Colors.red[900],
-                  content: Text(
-                    error,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              );
+              showErrorMessage(context, error);
             }
           });
 
@@ -80,63 +51,26 @@ class _LoginPageState extends State<LoginPage> {
                 HeadLine1(text: 'Login'),
                 Padding(
                   padding: EdgeInsets.all(32.0),
-                  child: Form(
-                    child: Column(
-                      children: [
-                        StreamBuilder<String>(
-                            stream: widget.presenter.emailErrorStream,
-                            builder: (context, snapshot) {
-                              return TextFormField(
-                                decoration: InputDecoration(
-                                    labelText: 'Email',
-                                    icon: Icon(Icons.email,
-                                        color: Theme.of(context)
-                                            .primaryColorLight),
-                                    errorText: snapshot.data?.isEmpty == true
-                                        ? null
-                                        : snapshot.data),
-                                keyboardType: TextInputType.emailAddress,
-                                onChanged: widget.presenter.validateEmail,
-                              );
-                            }),
-                        Padding(
-                          padding: EdgeInsets.only(top: 8, bottom: 32),
-                          child: StreamBuilder<String>(
-                              stream: widget.presenter.passwordErrorStream,
-                              builder: (context, snapshot) {
-                                return TextFormField(
-                                  decoration: InputDecoration(
-                                      labelText: 'Senha',
-                                      icon: Icon(Icons.lock,
-                                          color: Theme.of(context)
-                                              .primaryColorLight),
-                                      errorText: snapshot.data?.isEmpty == true
-                                          ? null
-                                          : snapshot.data),
-                                  obscureText: true,
-                                  onChanged: widget.presenter.validatePassword,
-                                );
-                              }),
-                        ),
-                        // ignore: deprecated_member_use
-                        StreamBuilder<bool>(
-                            stream: widget.presenter.isFormValidStream,
-                            builder: (context, snapshot) {
-                              // ignore: deprecated_member_use
-                              return RaisedButton(
-                                onPressed: snapshot.data == true
-                                    ? widget.presenter.auth
-                                    : null,
-                                child: Text('Entrar'.toUpperCase()),
-                              );
-                            }),
-                        // ignore: deprecated_member_use
-                        FlatButton.icon(
-                          onPressed: () {},
-                          icon: Icon(Icons.person),
-                          label: Text('Criar Contas'),
-                        ),
-                      ],
+                  child: Provider(
+                    create: (_) => widget.presenter,
+                    child: Form(
+                      child: Column(
+                        children: [
+                          EmailInput(),
+                          Padding(
+                            padding: EdgeInsets.only(top: 8, bottom: 32),
+                            child: PasswordInput(),
+                          ),
+                          // ignore: deprecated_member_use
+                          LoginButton(),
+                          // ignore: deprecated_member_use
+                          FlatButton.icon(
+                            onPressed: () {},
+                            icon: Icon(Icons.person),
+                            label: Text('Criar Contas'),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -148,3 +82,4 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+
