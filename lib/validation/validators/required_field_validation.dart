@@ -1,4 +1,3 @@
-
 import '../protocols/protocols.dart';
 
 class RequiredFiledValidation implements FieldValidation{
