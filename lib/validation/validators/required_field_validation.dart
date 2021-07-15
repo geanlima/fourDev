@@ -1,8 +1,12 @@
+import 'package:equatable/equatable.dart';
+
 import '../protocols/protocols.dart';
 
-class RequiredFiledValidation implements FieldValidation{
-  final String field;
+class RequiredFiledValidation extends Equatable implements FieldValidation{
   
+  final String field;  
+  List get props => [field];
+
   RequiredFiledValidation(this.field);
 
   String validate(String value){
